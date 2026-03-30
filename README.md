@@ -90,4 +90,4 @@ genus -f synth.tcl
 ## 📝 Author
 **Nguyen Thanh Phong**
 * B.E. in IC Design, Ho Chi Minh City University of Technology (HCMUT)
-* LinkedIn: [linkedin.com/in/nguyenthanhphong](https://linkedin.com/in/nguyenthanhphong)
+* LinkedIn: [linkedin.com/in/nguyenthanhphong]([https://linkedin.com/in/nguyenthanhphong](https://www.linkedin.com/in/nguy%E1%BB%85n-thanh-phong-43b389294/))
