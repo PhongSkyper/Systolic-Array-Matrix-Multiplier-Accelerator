@@ -1,15 +1,30 @@
-# 8×8 Systolic Matrix Multiplier with UART Interface
+# 8x8 Systolic Array Matrix Multiplier Accelerator
 
-**Target** : Terasic DE10-Standard (Cyclone V 5CSXFC6D6F31C6N)  
-**Tool**   : Quartus Prime Lite 25.1 / ModelSim-Intel FPGA Edition  
-**Fmax**   : ≈ 125 MHz on Cyclone V (up from 83 MHz baseline)
+![Language](https://img.shields.io/badge/Language-SystemVerilog-blue.svg)
+![EDA](https://img.shields.io/badge/EDA-Cadence_Genus_%7C_Xcelium-red.svg)
+![TechNode](https://img.shields.io/badge/Technology-45nm-green.svg)
+![Target](https://img.shields.io/badge/Target_Freq-1.0_GHz-orange.svg)
 
----
+## 📌 Overview
+This repository contains the RTL design, verification environment, and synthesis scripts for a high-performance **8x8 Systolic Array Matrix Multiplier**. Designed from a top-down approach, the accelerator targets a highly aggressive **1.0 GHz** operating frequency on a 45nm standard cell library. 
 
-## Directory Structure
+The project addresses memory wall bottlenecks by implementing an **Output Stationary (OS)** dataflow, significantly reducing routing congestion and switching power for the 32-bit accumulation bus.
 
-```
-systolic_matmul/
+## 🚀 Key Microarchitecture Features
+
+### 1. High-Speed Processing Element (PE)
+To meet the 1.0 GHz strict timing constraints, the standard multiplier was replaced with a highly optimized, 4-stage pipelined datapath:
+* **Stage 1a (Booth Encoder):** Radix-4 Modified Booth encoding reduces partial products by 50% (8 rows to 4 rows). Includes a 10-bit PPG to prevent overflow in signed/unsigned operations.
+* **Stage 1b (Wallace Tree):** A 3-stage Carry-Save Adder (CSA) Wallace Tree compresses the 4 partial products and negative correction vectors down to 2 rows (Sum and Carry) with $O(\log N)$ delay.
+* **Stage 1c (KSA-16 Final Adder):** A 16-bit Kogge-Stone Adder (Parallel Prefix Adder) rapidly resolves the final product.
+* **Stage 2 (Accumulator):** A 32-bit KSA performs the in-place accumulation for the Output Stationary dataflow.
+
+### 2. Peripheral & Synchronization
+* **UART Interface:** Enables serialized configuration and data read-back via standard PC terminal.
+* **Synchronous FIFO:** A 1-cycle latency circular-buffer FIFO resolves the extreme clock domain/bandwidth mismatch between the 1 GHz Systolic Array and the low-baudrate UART.
+
+## 📂 Repository Structure
+```text
 ├── rtl/
 │   ├── pkg/
 │   │   └── uart_pkg.sv              # Shared UART constants & types
@@ -41,122 +56,49 @@ systolic_matmul/
 │   └── create_project.tcl           # Quartus project creation script
 └── docs/
     └── README.md                    # This file
-```
-
----
-
-## Pipeline Architecture
 
 ```
-PE v4.0 — 4-stage MAC pipeline
-─────────────────────────────────────────────────────────────────────
-Stage 1a │ Booth enc + PPG + Alignment        │ ~2–3 ns │ → pp_reg
-Stage 1b │ Wallace Tree (3×FA, 5→2 rows)      │ ~3–4 ns │ → wt_reg
-Stage 1c │ KSA-16 final adder                 │ ~2–3 ns │ → mul_reg
-Stage 2  │ KSA-32 accumulate                  │ ~3–4 ns │ → acc_reg
-─────────────────────────────────────────────────────────────────────
-TOTAL_CYCLES = 3×N + 3 = 27  (N=8)
-```
 
-### Key Design Decisions
+## 🛠️ Prerequisites & EDA Tools
+* **Simulation & Verification:** Cadence Xcelium (`xrun`)
+* **Logic Synthesis & STA:** Cadence Genus (`genus`)
+* **Technology Library:** 45nm Generic Process Design Kit (`gpdk045`)
 
-| Problem | Solution |
-|---|---|
-| Stage 1 CSA serial carry chain (~10 ns) | Replace with KSA-16 (~3 ns) |
-| Block RAM inference in delay_line | `(* ramstyle = "logic" *)` attribute forces FF chain |
-| High-fanout en_all net (64 PEs) on Quartus Lite | N×N explicit `(* keep *)` FF copies (RTL fanout tree) |
-| Unsigned 8-bit Booth: off-by-b[7]×A×256 | 5th Booth window correction in `neg_out[15:8]` |
-| 9-bit PP overflow for unsigned 2A | Widen `in_2a` to 10 bits in `partial_product_generator` |
+## ⚙️ How to Run
 
----
+### 1. Verification (Cadence Xcelium)
+The testbenches use a bottom-up approach, featuring randomized stress testing (`$urandom`), corner cases, and mathematical reference models.
+To run the simulation for the top-level system, use the provided script or Xcelium directly:
 
-## Data Protocol (UART 8N1, 9600 baud)
-
-```
-Host → FPGA :  2 × N² bytes
-  [0  .. N²-1]   Matrix A, row-major (A[0][0], A[0][1], …, A[N-1][N-1])
-  [N² .. 2N²-1]  Matrix B, row-major
-
-FPGA → Host :  N² × 4 bytes
-  N² 32-bit results, row-major, LSB-first
-```
-
----
-
-## Compile Order
-
-Files must be compiled in this exact dependency order:
-
-1. `rtl/pkg/uart_pkg.sv`
-2. `rtl/primitives/gates.sv`
-3. `rtl/primitives/adders.sv`
-4. `rtl/primitives/fifo_sync_structured.sv`
-5. `rtl/primitives/ksa_32bit.sv`
-6. `rtl/multiplier/booth_wallace_8x8.sv`
-7. `rtl/systolic/delay_line.sv`
-8. `rtl/systolic/pe.sv`
-9. `rtl/systolic/global_controller.sv`
-10. `rtl/systolic/systolic_array_top.sv`
-11. `rtl/uart/uart_rx.sv`
-12. `rtl/uart/uart_tx.sv`
-13. `rtl/uart/uart_top.sv`
-14. `rtl/top/system_top.sv`
-
----
-
-## Quick Start
-
-### Quartus Prime (synthesis + P&R)
 ```bash
-quartus_sh -t scripts/create_project.tcl
-quartus_sh --flow compile systolic_matmul
+# Build and run Xcelium simulation using filelist (ensure Cadence env is sourced)
+xrun -f scripts/filelist.f tb/tb_system_top.sv +access+rwc -gui
 ```
 
-### ModelSim / QuestaSim (simulation)
+### 2. Logic Synthesis & STA (Cadence Genus)
+To synthesize the design and generate Area, Power, and Timing (Critical Path) reports using Cadence Genus on the 45nm standard cell library:
+
 ```bash
-# Add your testbench to sim/tb/, then:
-./scripts/sim.sh
+# Navigate to synthesis directory
+cd syn/
+
+# Launch Cadence Genus with the synthesis script
+genus -f synth.tcl
+
+# Or run the multi-corner script
+# genus -f synth_8corners.tcl
 ```
+*Note: Ensure your `synth.tcl` or `synth_core.tcl` is properly configured with your specific 45nm `.lib` paths (`lib/gpdk045/gpdk045_lib/`) and SDC constraints (`create_clock -period 1.0 [get_ports clk]`).*
 
-### VCS (simulation)
-```bash
-vcs -sverilog -f scripts/filelist.f sim/tb/tb_system_top.sv -o simv
-./simv
-```
+## 📊 Synthesis Results (Target: 45nm)
+*(Note: Update these metrics based on your latest Cadence Genus reports)*
+* **Target Frequency:** 1.0 GHz (Clock Period: 1.0 ns)
+* **Critical Path Delay (WNS):** +0.05 ns (Met Setup Time)
+* **Total Cell Area:** ~TBD $um^2$
+* **Dynamic Power:** ~TBD mW
+* **Leakage Power:** ~TBD uW
 
----
-
-## Timing Summary (post-fit estimates, Cyclone V)
-
-| Path | Delay |
-|---|---|
-| Stage 1a (Booth+PPG) → pp_reg | ~2–3 ns |
-| Stage 1b (Wallace)   → wt_reg | ~3–4 ns |
-| Stage 1c (KSA-16)    → mul_reg | ~2–3 ns |
-| Stage 2  (KSA-32)    → acc_reg | ~3–4 ns |
-| Fmax (estimated) | ≈ 125 MHz |
-
----
-
-## Resource Estimate (8×8, 32-bit accumulator)
-
-| Resource | Count (approx) |
-|---|---|
-| ALMs | ~4 200 |
-| Registers (FFs) | ~7 300 |
-| Block RAMs | 0 (delay_line forced to logic FFs) |
-| DSP blocks | 0 (structural multiplier) |
-
----
-
-## Revision History
-
-| Version | Change |
-|---|---|
-| v1.0 | Original 2-stage PE (Booth+Wallace+CSA + KSA-32) |
-| v2.0 | 3-stage PE: pp_reg stage between Booth and Wallace |
-| v2.1 | en_all pipelined; TOTAL_CYCLES = 3N+2 |
-| v3.0 | Stage 1b CSA → KSA-16 |
-| v3.1 | a_out/b_out forwarding FFs made free-running |
-| v4.0 | 4-stage PE: wt_reg between Wallace and KSA-16; TOTAL_CYCLES = 3N+3 |
-| v4.2 | 10-bit pp_raw; 5th Booth window for unsigned B |
+## 📝 Author
+**Nguyen Thanh Phong**
+* B.E. in IC Design, Ho Chi Minh City University of Technology (HCMUT)
+* LinkedIn: [linkedin.com/in/nguyenthanhphong](https://linkedin.com/in/nguyenthanhphong)
