@@ -1,0 +1,22 @@
+# Synopsys / Cadence logs
+*.log*
+*.cmd*
+*.history
+xrun.history
+xcelium.d/
+history/
+output_files/
+db/
+incremental_db/
+*.qpf
+*.qsf
+*.qws
+*.vcd
+fv/
+outputs/
+reports/
+
+# other
+*.bak
+*.pyc
+__pycache__/
