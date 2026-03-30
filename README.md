@@ -93,10 +93,9 @@ genus -f synth.tcl
 ## 📊 Synthesis Results (Target: 45nm)
 *(Note: Update these metrics based on your latest Cadence Genus reports)*
 * **Target Frequency:** 1.0 GHz (Clock Period: 1.0 ns)
-* **Critical Path Delay (WNS):** +0.05 ns (Met Setup Time)
-* **Total Cell Area:** ~TBD $um^2$
-* **Dynamic Power:** ~TBD mW
-* **Leakage Power:** ~TBD uW
+* **Critical Path Delay (WNS):** +2 ps (Met Setup Time)
+* **Total Cell Area:** ~192.514 $um^2$
+* **Total Power:** ~37.8 mW
 
 ## 📝 Author
 **Nguyen Thanh Phong**
