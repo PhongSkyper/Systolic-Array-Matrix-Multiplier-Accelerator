@@ -25,38 +25,28 @@ To meet the 1.0 GHz strict timing constraints, the standard multiplier was repla
 
 ## 📂 Repository Structure
 ```text
-├── rtl/
-│   ├── pkg/
-│   │   └── uart_pkg.sv              # Shared UART constants & types
-│   ├── primitives/
-│   │   ├── gates.sv                 # xnor_gate, and2_gate, and4_gate, mux2_1bit
-│   │   ├── adders.sv                # full_adder, ripple adders, synchronizer
-│   │   ├── fifo_sync_structured.sv  # Generic sync FIFO (parameterised W × L)
-│   │   └── ksa_32bit.sv             # 32-bit Kogge-Stone adder + pg/black/gray cells
-│   ├── multiplier/
-│   │   └── booth_wallace_8x8.sv     # Radix-4 Booth × Wallace Tree × KSA-16
-│   ├── systolic/
-│   │   ├── delay_line.sv            # Parameterised skew shift-register
-│   │   ├── pe.sv                    # Processing Element (4-stage MAC pipeline)
-│   │   ├── global_controller.sv     # Moore FSM + RTL fanout tree
-│   │   └── systolic_array_top.sv    # 8×8 PE array + delay lines + controller
-│   ├── uart/
-│   │   ├── uart_rx.sv               # 8N1 UART receiver (16× oversampling)
-│   │   ├── uart_tx.sv               # 8N1 UART transmitter
-│   │   └── uart_top.sv              # Baud gen + FIFOs + TX FSM
-│   └── top/
-│       └── system_top.sv            # Chip top: UART ↔ systolic array FSM
-├── sim/
-│   └── tb/                          # Testbench files (user-supplied)
-├── constraints/
-│   └── system_top.sdc               # Timing constraints (50 MHz → 125 MHz target)
-├── scripts/
-│   ├── filelist.f                   # Ordered source list for VCS / ModelSim
-│   ├── sim.sh                       # ModelSim compile + simulate script
-│   └── create_project.tcl           # Quartus project creation script
-└── docs/
-    └── README.md                    # This file
-
+├── constraints/                 # SDC timing constraints for synthesis
+├── doc/                         # Documentation and diagrams
+├── lib/                         # Standard cell libraries
+│   └── gpdk045/                 # 45nm Generic Process Design Kit (GPDK)
+├── rtl/                         # SystemVerilog source files
+│   ├── pkg/                     # Packages (UART configurations)
+│   ├── primitives/              # Basic blocks (Adders, KSA cells, FIFO, gates)
+│   ├── multiplier/              # Booth Encoder, Wallace Tree components
+│   ├── systolic/                # PE, Systolic Array Top, Global Controller, Delay lines
+│   ├── uart/                    # UART TX/RX, Baud Gen
+│   └── top/                     # System Top integration
+├── scripts/                     # Xcelium/modelsim simulation and utility scripts
+├── sim/                         # Simulation runs, wave dumps, and tests
+├── syn/                         # Synthesis workspace
+│   ├── synth.tcl                # Main Tcl scripts for Cadence Genus (SDC, constraints)
+│   ├── sta.tcl                  # Static Timing Analysis Script
+│   ├── synth_core.tcl           # Synthesis for core
+│   └── synth_8corners.tcl       # Multi-corner synthesis script
+├── tb/                          # Self-checking Testbenches for Xcelium
+│   ├── tb_system_top.sv         # Top level testbench
+│   └── ...                      # Sub-block testbenches
+└── README.md                    # This file
 ```
 
 ## 🛠️ Prerequisites & EDA Tools
