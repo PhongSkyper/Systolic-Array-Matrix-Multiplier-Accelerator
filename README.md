@@ -10,7 +10,7 @@ This repository contains the RTL design, verification environment, and synthesis
 
 The project addresses memory wall bottlenecks by implementing an **Output Stationary (OS)** dataflow, significantly reducing routing congestion and switching power for the 32-bit accumulation bus.
 
-## 🚀 Key Microarchitecture Features
+## 🚀 Key Features
 
 ### 1. High-Speed Processing Element (PE)
 To meet the 1.0 GHz strict timing constraints, the standard multiplier was replaced with a highly optimized, 4-stage pipelined datapath:
